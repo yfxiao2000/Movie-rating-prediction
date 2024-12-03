@@ -1,0 +1,134 @@
+---
+title: "Modeling and prediction for movies"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+library(statsr)
+```
+
+### Load data
+
+Make sure your data and R Markdown files are in the same directory. When loaded
+your data file will be called `movies`. Delete this note when before you submit 
+your work. 
+
+```{r load-data}
+#load("movies.Rdata")
+```
+
+
+
+* * *
+
+## Part 1: Data
+If the movies were selected through a process of random sampling from a defined population (e.g., all movies released in a certain timeframe), the findings from analyses could be generalized to the population from which the sample was drawn. However, random sampling does not inherently imply that causal inferences can be made.
+
+* * *
+
+## Part 2: Research question
+How well can we predict a movie's IMDb rating based on its runtime, genre, MPAA rating, and the year it was released in theaters?
+
+
+* * *
+
+## Part 3: Exploratory data analysis
+```{r summarize the main variables and create visualizations:}
+# Summary of main variables
+summary(movies$runtime)
+summary(movies$genre)
+summary(movies$mpaa_rating)
+summary(movies$thtr_rel_year)
+summary(movies$imdb_rating)
+
+# Histogram of IMDb ratings
+ggplot(movies, aes(x = imdb_rating)) +
+  geom_histogram(binwidth = 0.5, fill = "blue", color = "black") +
+  theme_minimal() +
+  labs(title = "Distribution of IMDb Ratings", x = "IMDb Rating", y = "Count")
+
+# Scatter plot of IMDb Rating vs. Runtime
+ggplot(movies, aes(x = runtime, y = imdb_rating)) +
+  geom_point(alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "IMDb Rating vs. Runtime", x = "Runtime (minutes)", y = "IMDb Rating")
+
+# Scatter plot of IMDb Rating vs. Theatrical Release Year
+ggplot(movies, aes(x = thtr_rel_year, y = imdb_rating)) +
+  geom_point(alpha = 0.6) +
+  theme_minimal() +
+  labs(title = "IMDb Rating vs. Theatrical Release Year", x = "Theatrical Release Year", y = "IMDb Rating")
+
+# Box plot for IMDb rating by MPAA rating
+ggplot(movies, aes(x = mpaa_rating, y = imdb_rating)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "IMDb Rating by MPAA Rating", x = "MPAA Rating", y = "IMDb Rating")
+
+# Box plot for IMDb rating by Genre
+ggplot(movies, aes(x = imdb_rating, y = genre)) +
+  geom_boxplot() +
+  theme_minimal() +
+  labs(title = "IMDb Rating by Genre", x = "IMDb Rating", y = "Genre")
+```
+
+* * *
+
+## Part 4: Modeling
+```{r}
+# Convert categorical variables to factors if they are not already
+movies$genre <- as.factor(movies$genre)
+movies$mpaa_rating <- as.factor(movies$mpaa_rating)
+
+# Build a linear model to predict IMDb rating
+# This code assumes that 'runtime', 'genre', 'mpaa_rating', and 'thtr_rel_year' are the predictors
+lm_model <- lm(imdb_rating ~ runtime + genre + mpaa_rating + thtr_rel_year, data = movies)
+
+# Summary of the linear model
+summary(lm_model)
+```
+
+* * *
+
+## Part 5: Prediction
+
+```{r}
+# New movie details for prediction
+new_movie <- data.frame(runtime = 120, genre = "Action", mpaa_rating = "PG-13", thtr_rel_year = 2016)
+
+# Convert factors to match the model's data
+new_movie$genre <- as.factor(new_movie$genre)
+new_movie$mpaa_rating <- as.factor(new_movie$mpaa_rating)
+levels(new_movie$genre) <- levels(movies$genre)
+levels(new_movie$mpaa_rating) <- levels(movies$mpaa_rating)
+
+# Predict IMDb rating
+predict(lm_model, new_movie, interval = "confidence")
+```
+
+* * *
+
+## Part 6: Conclusion
+This analysis aimed to understand the factors that could predict a movie's IMDb rating, a proxy for its overall reception and quality as perceived by viewers. We developed a multiple linear regression model using runtime, genre, mpaa_rating, and theatrical release year as predictors.
+
+From our exploratory data analysis, we observed that there is no clear linear relationship between the runtime of a movie and its IMDb rating, nor is there an apparent trend in ratings over the years. However, the box plots indicated some differences in ratings across genres and MPAA ratings, with genres like Drama and Documentary and MPAA ratings 'PG-13' and 'R' having slightly higher median IMDb ratings.
+
+The linear model's summary indicated that some predictors were statistically significant, suggesting that they have a measurable impact on the IMDb rating. However, this model should be interpreted with caution, as the R-squared value revealed that only a portion of the variability in IMDb ratings is explained by these variables. This suggests that many other factors contribute to a movie's rating that were not included in the model.
+
+When we used the model to predict the IMDb rating for a hypothetical new movie released in 2016, the prediction came with a confidence interval. This interval reflects the uncertainty inherent in any prediction and gives a range within which the actual IMDb rating is likely to fall.
+
+The limitations of this study include the lack of data on other potentially influential factors, such as budget, box office performance, cast and crew reputations, marketing efforts, and contemporaneous competition in movie theaters. Additionally, the model assumes linear relationships between the predictors and the IMDb rating, which may not hold in reality. The method of data collection for the original dataset was not specified, which could also affect the generalizability of our findings.
+
+Future research could expand on this model by including a wider range of predictors, using more complex statistical techniques to capture non-linear relationships, and incorporating methods to handle any potential biases due to the method of data collection. It would also be valuable to investigate the causality direction of these predictors on movie ratings through controlled experiments or natural experiments where feasible.
+
+In conclusion, while the model provided some insights into the factors that correlate with a movie's IMDb rating, there is much room for refinement and expansion of this analysis to fully understand what influences a movie's success and reception.
